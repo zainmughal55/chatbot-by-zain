@@ -1,18 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
     const { message } = await req.json();
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: `You are a highly skilled and efficient developer assistant.
+    const response = await fetch("http://localhost:11434/api/generate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gemma3:1b",
+        prompt: `
+          You are a highly skilled and efficient developer assistant.
           You provide clear, accurate, and concise answers to software development-related questions.
 
           You can help with:
@@ -27,20 +27,30 @@ export async function POST(req: NextRequest) {
           - If you're unsure about an answer, say "I'm not confident about this. Please verify."
           - Never make up facts, code, or libraries.
           - Do not answer questions outside of software development.
-          - Keep responses short and to the point unless a detailed answer is specifically requested.` },
-        { role: 'user', content: message },
-      ],
+          - Keep responses short and to the point unless a detailed answer is specifically requested.
+
+          User: ${message}
+          Assistant:
+        `,
+        stream: false,
+      }),
     });
+    console.log("Response from /api/generate:", response);
+    const data = await response.json();
+    console.log("Data received from /api/generate:", data);
 
     return NextResponse.json({
-      reply: completion.choices[0].message.content,
+      reply: data.response.trim(),
     });
   } catch (error: any) {
-    console.log('Error in POST /api/bot:', error);
+    console.log("Error in POST /api/bot:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
 export function GET() {
-  return NextResponse.json({ message: 'Only POST requests allowed' }, { status: 405 });
+  return NextResponse.json(
+    { message: "Only POST requests allowed" },
+    { status: 405 }
+  );
 }
