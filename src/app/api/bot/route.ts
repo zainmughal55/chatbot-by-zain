@@ -35,9 +35,7 @@ export async function POST(req: NextRequest) {
         stream: false,
       }),
     });
-    console.log("Response from /api/generate:", response);
     const data = await response.json();
-    console.log("Data received from /api/generate:", data);
 
     return NextResponse.json({
       reply: data.response.trim(),
